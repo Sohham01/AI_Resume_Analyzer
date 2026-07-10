@@ -57,6 +57,12 @@ Analyze the following resume thoroughly and return a structured JSON report.
 The output MUST be a valid JSON object matching the following schema:
 {{
   "ats_score": integer (0 to 100),
+  "score_breakdown": {{
+    "profile_completeness": integer (0 to 100),
+    "keyword_alignment": integer (0 to 100),
+    "formatting_quality": integer (0 to 100),
+    "impact_phrasing": integer (0 to 100)
+  }},
   "score_explanation": "string explaining why this score was given, and key highlights",
   "summary": "string providing a concise summary of the candidate's profile",
   "strengths": ["list of strings, representing strong aspects of the resume content/experience"],

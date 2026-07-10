@@ -1,5 +1,7 @@
 import json
 import streamlit as st
+import pandas as pd
+import altair as alt
 from pathlib import Path
 
 from utils.pdf_reader import extract_text
@@ -32,6 +34,36 @@ def load_css():
         st.warning("Styling system CSS file not found.")
 
 load_css()
+
+
+def clean_html(html_str: str) -> str:
+    """
+    Remove newlines and leading indentation from HTML blocks 
+    to prevent Streamlit from misinterpreting them as markdown code blocks.
+    """
+    return "".join(line.strip() for line in html_str.splitlines() if line.strip())
+
+
+def render_gauge_html(score, label, color):
+    # Circumference of radius 60 circle is ~377
+    dashoffset = 377 - (377 * score / 100)
+    gauge_html = f"""
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 15px 0;">
+        <svg width="150" height="150" viewBox="0 0 150 150">
+            <!-- Background Track -->
+            <circle cx="75" cy="75" r="60" stroke="rgba(255,255,255,0.05)" stroke-width="12" fill="transparent" />
+            <!-- Active Track with Draw Animation -->
+            <circle cx="75" cy="75" r="60" stroke="{color}" stroke-width="12" fill="transparent"
+                    stroke-dasharray="377" stroke-dashoffset="{dashoffset}" stroke-linecap="round"
+                    class="gauge-circle"
+                    style="transform: rotate(-90deg); transform-origin: 50% 50%;" />
+            <text x="75" y="83" text-anchor="middle" font-size="28" font-family="'Outfit', sans-serif" font-weight="800" fill="white">{score}</text>
+        </svg>
+        <div style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.15em; color: #94a3b8; font-weight: 600; margin-top: 10px;">{label}</div>
+    </div>
+    """
+    return clean_html(gauge_html)
+
 
 
 # ---------------------------------------------------
@@ -182,31 +214,87 @@ with tab_ats:
         score = analysis.get("ats_score", 0)
         score_class = "score-excellent" if score >= 75 else ("score-good" if score >= 50 else "score-needs-work")
         
-        # Display Score Card in center
+        # Display Score Gauge in center
+        gauge_color = "#10b981" if score >= 75 else ("#f59e0b" if score >= 50 else "#ef4444")
         st.markdown(
-            f"""
+            clean_html(f"""
             <div class="score-container">
                 <div class="score-card {score_class}">
-                    <div class="score-value">{score}/100</div>
-                    <div class="score-label">Overall ATS Score</div>
+                    {render_gauge_html(score, "Overall ATS Score", gauge_color)}
                 </div>
             </div>
-            """,
+            """),
             unsafe_allow_html=True
         )
         
-        # Score explanation card
-        st.markdown(
-            f"""
-            <div class="card">
-                <div class="card-title">💡 Analysis Summary</div>
-                <p style="margin-top: 10px; line-height: 1.6;">{analysis.get('score_explanation', '')}</p>
-                <hr style="border-color: rgba(255,255,255,0.08); margin: 15px 0;">
-                <p style="font-style: italic; font-weight: 300;">{analysis.get('summary', '')}</p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        # Summary and Breakdown side-by-side
+        col_summary, col_breakdown = st.columns([1, 1])
+        
+        with col_summary:
+            st.markdown(
+                clean_html(f"""
+                <div class="card" style="height: 100%;">
+                    <div class="card-title">💡 Analysis Summary</div>
+                    <p style="margin-top: 10px; line-height: 1.6;">{analysis.get('score_explanation', '')}</p>
+                    <hr style="border-color: rgba(255,255,255,0.08); margin: 15px 0;">
+                    <p style="font-style: italic; font-weight: 300;">{analysis.get('summary', '')}</p>
+                </div>
+                """),
+                unsafe_allow_html=True
+            )
+            
+        with col_breakdown:
+            breakdown = analysis.get("score_breakdown", {})
+            if breakdown:
+                df_chart = pd.DataFrame({
+                    "Category": [
+                        "Profile Completeness", 
+                        "Keyword Alignment", 
+                        "Formatting Quality", 
+                        "Impact Phrasing"
+                    ],
+                    "Score": [
+                        breakdown.get("profile_completeness", 0),
+                        breakdown.get("keyword_alignment", 0),
+                        breakdown.get("formatting_quality", 0),
+                        breakdown.get("impact_phrasing", 0)
+                    ]
+                })
+                
+                bar_chart = alt.Chart(df_chart).mark_bar(
+                    cornerRadiusEnd=8,
+                    height=20
+                ).encode(
+                    x=alt.X("Score:Q", scale=alt.Scale(domain=[0, 100]), title="Score (%)"),
+                    y=alt.Y("Category:N", sort=None, title=None, axis=alt.Axis(labelColor="white", labelFontSize=12)),
+                    color=alt.value("#6366f1")
+                ).properties(
+                    height=200
+                ).configure_axis(
+                    grid=False
+                ).configure_view(
+                    strokeOpacity=0
+                )
+                
+                st.markdown(
+                    clean_html("""
+                    <div class="card" style="margin-bottom: 0px; border-bottom: none; border-bottom-left-radius: 0px; border-bottom-right-radius: 0px;">
+                        <div class="card-title">📊 Category Breakdown</div>
+                    </div>
+                    """),
+                    unsafe_allow_html=True
+                )
+                st.altair_chart(bar_chart, use_container_width=True)
+            else:
+                st.markdown(
+                    clean_html("""
+                    <div class="card" style="height: 100%;">
+                        <div class="card-title">📊 Category Breakdown</div>
+                        <p style="margin-top: 10px;">Run a new analysis to see category breakdowns.</p>
+                    </div>
+                    """),
+                    unsafe_allow_html=True
+                )
         
         # Detailed feedback columns
         col_feedback1, col_feedback2 = st.columns(2)
@@ -215,28 +303,28 @@ with tab_ats:
             # Strengths
             strengths_html = "".join([f"<li>{s}</li>" for s in analysis.get("strengths", [])])
             st.markdown(
-                f"""
+                clean_html(f"""
                 <div class="card">
                     <div class="card-title">✅ Strong Aspects</div>
                     <ul style="margin-left: 20px; line-height: 1.6;">
                         {strengths_html if strengths_html else '<li>No major strengths detected.</li>'}
                     </ul>
                 </div>
-                """,
+                """),
                 unsafe_allow_html=True
             )
             
             # Formatting Improvements
             format_html = "".join([f"<li>{f}</li>" for f in analysis.get("formatting_improvements", [])])
             st.markdown(
-                f"""
+                clean_html(f"""
                 <div class="card">
                     <div class="card-title">🛠️ Formatting & ATS Parsability</div>
                     <ul style="margin-left: 20px; line-height: 1.6;">
                         {format_html if format_html else '<li>Formatting looks clean and parsable.</li>'}
                     </ul>
                 </div>
-                """,
+                """),
                 unsafe_allow_html=True
             )
             
@@ -244,14 +332,14 @@ with tab_ats:
             # Weaknesses
             weaknesses_html = "".join([f"<li>{w}</li>" for w in analysis.get("weaknesses", [])])
             st.markdown(
-                f"""
+                clean_html(f"""
                 <div class="card">
                     <div class="card-title">⚠️ Gaps & Areas to Improve</div>
                     <ul style="margin-left: 20px; line-height: 1.6;">
                         {weaknesses_html if weaknesses_html else '<li>No major weaknesses found.</li>'}
                     </ul>
                 </div>
-                """,
+                """),
                 unsafe_allow_html=True
             )
             
@@ -261,7 +349,7 @@ with tab_ats:
             missing_tags = "".join([f"<span class='tag tag-missing'>{skill}</span>" for skill in analysis.get("missing_skills", [])])
             
             st.markdown(
-                f"""
+                clean_html(f"""
                 <div class="card">
                     <div class="card-title">🔑 Technical Skills Detected</div>
                     <div class="tag-container">{tech_tags if tech_tags else 'None detected.'}</div>
@@ -277,7 +365,7 @@ with tab_ats:
                     <p style="font-size: 13px; color: #94a3b8; margin-bottom: 8px;">These skills are commonly expected for your profile but were absent:</p>
                     <div class="tag-container">{missing_tags if missing_tags else 'No missing skills identified.'}</div>
                 </div>
-                """,
+                """),
                 unsafe_allow_html=True
             )
             
@@ -357,20 +445,68 @@ with tab_jd:
             bar_color = "#10b981" if match_score >= 75 else ("#f59e0b" if match_score >= 50 else "#ef4444")
             
             st.markdown("### 📊 Matching Metrics")
+            
+            # Display score gauge and keyword chart side-by-side
+            col_gauge, col_chart = st.columns([1, 2])
+            
+            with col_gauge:
+                st.markdown(
+                    clean_html(f"""
+                    <div class="score-container" style="margin: 0;">
+                        <div class="score-card" style="border-top: 5px solid {bar_color}; width: 100%; min-width: 100%;">
+                            {render_gauge_html(match_score, "Job Description Match", bar_color)}
+                        </div>
+                    </div>
+                    """),
+                    unsafe_allow_html=True
+                )
+                
+            with col_chart:
+                matched_count = len(jd_match.get("matched_keywords", []))
+                missing_count = len(jd_match.get("missing_keywords", []))
+                
+                df_keywords = pd.DataFrame({
+                    "Status": ["Matched", "Missing"],
+                    "Count": [matched_count, missing_count]
+                })
+                
+                keyword_chart = alt.Chart(df_keywords).mark_bar(
+                    cornerRadiusEnd=8,
+                    height=24
+                ).encode(
+                    x=alt.X("Count:Q", title="Number of Skills/Keywords"),
+                    y=alt.Y("Status:N", sort=None, title=None, axis=alt.Axis(labelColor="white", labelFontSize=12)),
+                    color=alt.Color(
+                        "Status:N",
+                        scale=alt.Scale(domain=["Matched", "Missing"], range=["#10b981", "#ef4444"]),
+                        legend=None
+                    )
+                ).properties(
+                    height=140
+                ).configure_axis(
+                    grid=False
+                ).configure_view(
+                    strokeOpacity=0
+                )
+                
+                st.markdown(
+                    clean_html("""
+                    <div class="card" style="margin-bottom: 0px; border-bottom: none; border-bottom-left-radius: 0px; border-bottom-right-radius: 0px;">
+                        <div class="card-title">📊 Keyword Match Ratio</div>
+                    </div>
+                    """),
+                    unsafe_allow_html=True
+                )
+                st.altair_chart(keyword_chart, use_container_width=True)
+                
+            # Alignment explanation card
             st.markdown(
-                f"""
+                clean_html(f"""
                 <div class="card">
-                    <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px;">
-                        <span>Keyword & Skill Alignment</span>
-                        <span style="color: {bar_color};">{match_score}% Match</span>
-                    </div>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar-fill" style="width: {match_score}%; background: {bar_color};"></div>
-                    </div>
                     <div class="card-title">🔍 Alignment Summary</div>
                     <p style="line-height: 1.6; margin-top: 10px;">{jd_match.get('match_explanation', '')}</p>
                 </div>
-                """,
+                """),
                 unsafe_allow_html=True
             )
             
@@ -379,40 +515,40 @@ with tab_jd:
             with col_keywords1:
                 matched_tags = "".join([f"<span class='tag'>{kw}</span>" for kw in jd_match.get("matched_keywords", [])])
                 st.markdown(
-                    f"""
+                    clean_html(f"""
                     <div class="card">
                         <div class="card-title" style="color: #10b981;">✅ Matched Keywords ({len(jd_match.get("matched_keywords", []))})</div>
                         <p style="font-size: 13px; color: #94a3b8; margin-bottom: 10px;">These skills from the Job Description were found in your resume:</p>
                         <div class="tag-container">{matched_tags if matched_tags else 'No direct keywords matched.'}</div>
                     </div>
-                    """,
+                    """),
                     unsafe_allow_html=True
                 )
                 
             with col_keywords2:
                 missing_tags = "".join([f"<span class='tag tag-missing'>{kw}</span>" for kw in jd_match.get("missing_keywords", [])])
                 st.markdown(
-                    f"""
+                    clean_html(f"""
                     <div class="card">
                         <div class="card-title" style="color: #fca5a5;">❌ Missing Keywords ({len(jd_match.get("missing_keywords", []))})</div>
                         <p style="font-size: 13px; color: #94a3b8; margin-bottom: 10px;">These critical keywords are present in the JD but missing from your resume:</p>
                         <div class="tag-container">{missing_tags if missing_tags else 'None! Perfect match.'}</div>
                     </div>
-                    """,
+                    """),
                     unsafe_allow_html=True
                 )
                 
             # Tailoring suggestions
             suggestions_html = "".join([f"<li>{s}</li>" for s in jd_match.get("tailoring_suggestions", [])])
             st.markdown(
-                f"""
+                clean_html(f"""
                 <div class="card">
                     <div class="card-title">✍️ Tailoring Recommendations</div>
                     <ul style="margin-left: 20px; line-height: 1.6;">
                         {suggestions_html if suggestions_html else '<li>No suggestions needed. Your resume matches perfectly.</li>'}
                     </ul>
                 </div>
-                """,
+                """),
                 unsafe_allow_html=True
             )
 
