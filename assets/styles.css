@@ -1,0 +1,233 @@
+/* ------------------------------
+   GENERAL THEME OVERRIDES
+--------------------------------*/
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+.block-container {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.05);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.3);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.5);
+}
+
+/* ------------------------------
+   HERO SECTION (Glassmorphic Gradient)
+--------------------------------*/
+.hero {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #2563eb 100%);
+    padding: 50px 30px;
+    border-radius: 24px;
+    color: white;
+    text-align: center;
+    margin-bottom: 35px;
+    box-shadow: 0 20px 40px -15px rgba(79, 70, 229, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
+    pointer-events: none;
+}
+
+.hero h1 {
+    font-size: 48px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    letter-spacing: -0.03em;
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.hero p {
+    font-size: 20px;
+    font-weight: 300;
+    opacity: 0.95;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* ------------------------------
+   METRIC & SCORE CARDS
+--------------------------------*/
+.score-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 25px 0;
+}
+
+.score-card {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 35px;
+    border-radius: 24px;
+    color: white;
+    text-align: center;
+    min-width: 280px;
+    max-width: 400px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.score-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
+}
+
+.score-value {
+    font-size: 72px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 5px;
+    background: linear-gradient(135deg, #38bdf8, #818cf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.score-label {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+/* Dynamic Score Borders based on score range */
+.score-excellent {
+    border-top: 5px solid #10b981 !important;
+}
+.score-good {
+    border-top: 5px solid #f59e0b !important;
+}
+.score-needs-work {
+    border-top: 5px solid #ef4444 !important;
+}
+
+/* ------------------------------
+   CARDS & WRAPPERS
+--------------------------------*/
+.card {
+    background: rgba(30, 41, 59, 0.45);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 24px;
+    border-radius: 18px;
+    margin-bottom: 24px;
+    color: #e2e8f0;
+    transition: all 0.25s ease;
+}
+
+.card:hover {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(30, 41, 59, 0.6);
+}
+
+.card-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    border-left: 4px solid #6366f1;
+    padding-left: 12px;
+}
+
+/* ------------------------------
+   SKILL TAGS / CHIPS
+--------------------------------*/
+.tag-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.tag {
+    background: rgba(99, 102, 241, 0.15);
+    color: #a5b4fc;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.tag:hover {
+    background: rgba(99, 102, 241, 0.25);
+    transform: scale(1.03);
+}
+
+.tag-soft {
+    background: rgba(16, 185, 129, 0.15);
+    color: #6ee7b7;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.tag-soft:hover {
+    background: rgba(16, 185, 129, 0.25);
+}
+
+.tag-missing {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.tag-missing:hover {
+    background: rgba(239, 68, 68, 0.25);
+}
+
+/* ------------------------------
+   PROGRESS METER
+--------------------------------*/
+.progress-bar-container {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    height: 12px;
+    width: 100%;
+    overflow: hidden;
+    margin-top: 8px;
+    margin-bottom: 20px;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #6366f1, #3b82f6);
+    transition: width 1s ease-in-out;
+}
