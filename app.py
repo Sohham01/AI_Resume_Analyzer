@@ -99,7 +99,6 @@ with st.sidebar:
     )
     
     # API Status Check
-    default_key_exists = "GEMINI_API_KEY" in st.secrets
     active_key = custom_api_key if custom_api_key.strip() != "" else st.secrets.get("GEMINI_API_KEY", "")
     
     if active_key:
@@ -186,6 +185,7 @@ with tab_ats:
                     # Clear previous analysis if a new file is uploaded
                     st.session_state["ats_analysis"] = None
                     st.session_state["jd_match"] = None
+                    st.session_state["bullet_optimizations"] = None
                     st.session_state["interview_prep"] = None
                     st.success(f"Successfully extracted text from '{uploaded_file.name}'!")
                 except Exception as e:
